@@ -1,14 +1,40 @@
-{% extends "layouts/base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Stripe Checkout</title>
+</head>
+<body>
+    <!-- Stripe Checkout Button -->
+    <button class="btn btn-primary" id="checkout-button"> T-shirt Pay Now</button>
 
-{% block title %}Home{% endblock  %}
+    <button class="btn btn-primary" id="checkout-button2"> jeans Pay Now</button>
 
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        var stripe = Stripe('pk_test_51OyWhLSIykP00ow1k0dzBLFjWA7jTBbhqZhOpHRnYQplfcJKo5Vb15SDAGwKlGzQXj1tmxpgKSWbuDQ6eKbnHCLi00GuWDvkIk');
+        
+        document.getElementById('checkout-button').addEventListener('click', function() {
+            stripe.redirectToCheckout({
+                sessionId: 'cs_test_a10cHDROMoxEhvWK5tij6QPfNDh8tTUMEy0KTcEYYfRXW6rNcdzm3r9fge'
+            }).then(function(result) {
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            });
+        });
 
-{% block stylesheets %}{% endblock  %}
-
-
-{% block content %}
-
-{% endblock  %}
-
-
-{% block javascripts %}{% endblock javascripts %}
+        document.getElementById('checkout-button2').addEventListener('click', function() {
+            stripe.redirectToCheckout({
+                sessionId: 'cs_test_a1ItpUFKqytYnQZtbY1fibukXGdClvV19LNDsQJyGcuQgFgYvjDeiJ5z0k'
+            }).then(function(result) {
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
