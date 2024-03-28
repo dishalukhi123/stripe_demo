@@ -7,9 +7,7 @@
     <title>Stripe Checkout</title>
 </head>
 <body>
-    <!-- Stripe Checkout Button -->
     <button class="btn btn-primary" id="checkout-button"> T-shirt Pay Now</button>
-
     <button class="btn btn-primary" id="checkout-button2"> jeans Pay Now</button>
 
     <script src="https://js.stripe.com/v3/"></script>
@@ -18,7 +16,7 @@
         
         document.getElementById('checkout-button').addEventListener('click', function() {
             stripe.redirectToCheckout({
-                sessionId: 'cs_test_a10cHDROMoxEhvWK5tij6QPfNDh8tTUMEy0KTcEYYfRXW6rNcdzm3r9fge'
+                sessionId: 'cs_test_a10c40aGAURYsEOvU4BDLOLhwqab92NF3RtQIm7dztOBn4mkfVoHty61J6'
             }).then(function(result) {
                 if (result.error) {
                     alert(result.error.message);
@@ -28,7 +26,7 @@
 
         document.getElementById('checkout-button2').addEventListener('click', function() {
             stripe.redirectToCheckout({
-                sessionId: 'cs_test_a1ItpUFKqytYnQZtbY1fibukXGdClvV19LNDsQJyGcuQgFgYvjDeiJ5z0k'
+                sessionId: 'cs_test_a10c40aGAURYsEOvU4BDLOLhwqab92NF3RtQIm7dztOBn4mkfVoHty61J6'
             }).then(function(result) {
                 if (result.error) {
                     alert(result.error.message);

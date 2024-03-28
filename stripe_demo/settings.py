@@ -75,6 +75,13 @@ TEMPLATES = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication', 
+    ],
+}
+
 WSGI_APPLICATION = 'stripe_demo.wsgi.application'
 
 
