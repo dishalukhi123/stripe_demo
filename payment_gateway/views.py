@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
+from django.views import View
 import stripe
 from rest_framework import generics
 from .models import Customers , Cards , Products
@@ -118,7 +119,8 @@ class CreatePaymentIntent(APIView):
             price = int(product.price) * int(data.get('quantity')) * 100
 
             stripe.api_key = settings.STRIPE_SECRET_KEY
-            # return_url = 'https://example.com/payment/success'
+            return_url = 'http://127.0.0.1:2000/confirmation'
+            
 
             # Create a PaymentIntent
             payment_intent = stripe.PaymentIntent.create(
@@ -126,35 +128,71 @@ class CreatePaymentIntent(APIView):
                 currency='INR',
                 customer=data.get('customer_id'),
                 payment_method=data.get('card_id') ,
-                # confirm=True, 
                 metadata={'product_id': data.get('product_id'), 'quantity': data.get('quantity')},
+                confirm=True, 
+                return_url=return_url
             )
-            # payment_intent.confirm()
-
+            print('=-=-=-=-',payment_intent.id)
+            # stripe.PaymentIntent.confirm(
+            #     payment_intent.id,
+            #     payment_method=data.get('card_id')
+                 
+            # )
+           
 
             print('Payment Intent:', payment_intent)
 
-            if payment_intent.payment_method:
-                payment_method = stripe.PaymentMethod.retrieve(payment_intent.payment_method)
-                card_details = {
-                    'last4': payment_method.card.last4,
-                    'exp_month': payment_method.card.exp_month,
-                    'exp_year': payment_method.card.exp_year,
-                    'brand': payment_method.card.brand,
-                    'country': payment_method.card.country,
-                }
-            else:
-                card_details = None
+            # if payment_intent.payment_method:
+            #     payment_method = stripe.PaymentMethod.retrieve(payment_intent.payment_method)
+            #     card_details = {
+            #         'last4': payment_method.card.last4,
+            #         'exp_month': payment_method.card.exp_month,
+            #         'exp_year': payment_method.card.exp_year,
+            #         'brand': payment_method.card.brand,
+            #         'country': payment_method.card.country,
+            #     }
+            # else:
+            #     card_details = None
                 
 
 
-            return Response({'client_secret': payment_intent , 'card_details': card_details}, status=status.HTTP_201_CREATED)
+            return Response({'client_secret': payment_intent }, status=status.HTTP_201_CREATED)
         
         except stripe.error.StripeError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Products.DoesNotExist:
             return Response({'error': 'Product not found'}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ConfirmPaymentIntent(APIView):
+    def post(self, request):
+        data = request.data
+        try:
+            required_fields = ['card_id', 'payment_intent_id']
+            for field in required_fields:
+                if not data.get(field):
+                    raise ValidationError(f'{field.capitalize()} is required')
+
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+
+            payment_intent = stripe.PaymentIntent.confirm(
+                data.get('payment_intent_id'),
+                payment_method=data.get('card_id'),
+                return_url='http://127.0.0.1:2000/confirmation' 
+            )
+
+            return Response({'message': 'Payment Intent confirmed successfully','payment_intent' : payment_intent}, status=status.HTTP_200_OK)
+        
+        except stripe.error.StripeError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+class ConfirmationView(APIView):
+    def get(self, request):
+        return HttpResponse("Payment confirmed successfully")
+    
+    
+        
 
 # class Manage_Cards(APIView):
 #     def post(self, request):
@@ -203,7 +241,10 @@ class CreateCard(APIView):
             serialized_card = {
                 'card_number': card.card_number,
                 'card_name': card.card_name,
-                'exp_year': card.exp_year
+                'exp_year': card.exp_year,
+                'customer_id' : card.customer_id,
+                'cvc' : card.cvc,
+                'card_id' : card.card_id
             }
             serialized_cards.append(serialized_card)
         return Response({'cards': serialized_cards}, status=status.HTTP_200_OK)
@@ -220,8 +261,8 @@ class CreateCard(APIView):
                     return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
 
             cvc = str(data.get('cvc'))  
-            if len(cvc) not in [3, 4]:
-                return Response({'error': 'Invalid cvc length'}, status=status.HTTP_400_BAD_REQUEST)
+            if len(cvc) != 4:
+                return Response({'error': 'CVC must be 4 characters long'}, status=status.HTTP_400_BAD_REQUEST)
             
             exp_year = str(data.get('exp_year'))
             if len(exp_year) != 4 or not exp_year.isdigit():
@@ -237,6 +278,10 @@ class CreateCard(APIView):
                 customer = Customers.objects.get(stripe_customer_id=customer_id)
             except Customers.DoesNotExist:
                 return Response({'error': 'Customer does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+            
+            existing_cards_count = Cards.objects.filter(customer=customer).count()
+            if existing_cards_count >= 2:
+                return Response({'error': 'Card limit reached for this customer.'}, status=status.HTTP_400_BAD_REQUEST)
             
             card = stripe.Customer.create_source(
                 customer_id,
