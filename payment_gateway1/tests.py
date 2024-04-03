@@ -12,7 +12,4 @@ urlpatterns = [
     path('confirm-payment-intent/', ConfirmPaymentIntent.as_view(), name='confirm_payment_intent'),
     path('confirmation/', ConfirmationView.as_view(), name='payment_confirmation'),
 
-
-    
-
 ]

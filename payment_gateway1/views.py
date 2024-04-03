@@ -74,7 +74,7 @@ class ManageCustomer(APIView):
                 stripe_customer_id=customer.id,
             )
 
-            return Response({'customer_id': customer.id}, status=status.HTTP_201_CREATED)
+            return Response({'customer': customer}, status=status.HTTP_201_CREATED)
         
         except stripe.error.StripeError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

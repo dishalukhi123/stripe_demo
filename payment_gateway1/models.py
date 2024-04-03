@@ -28,9 +28,8 @@ class Cards(models.Model):
     exp_year = models.PositiveSmallIntegerField()
     exp_month = models.PositiveSmallIntegerField()
     cvc = models.CharField(max_length=4)
-    card_id = models.CharField(max_length=100 , null= True)
+    card_id = models.CharField(max_length=100)
 
 
     class Meta:
         db_table = 'cards'
-
