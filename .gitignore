@@ -2,4 +2,4 @@
 my_env/
 __pycache__/
 *.pyc
-payment_gateway/migrations/
+payment_gateway1/migrations/*

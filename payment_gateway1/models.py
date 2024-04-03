@@ -27,7 +27,7 @@ class Cards(models.Model):
     card_number = models.CharField(max_length=16 , unique=True)
     exp_year = models.PositiveSmallIntegerField()
     exp_month = models.PositiveSmallIntegerField()
-    cvc = models.CharField(max_length=4)
+    cvc = models.CharField(max_length=3)
     card_id = models.CharField(max_length=100)
 
 

@@ -1,3 +1,4 @@
+import re
 from django.shortcuts import render
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
@@ -115,11 +116,25 @@ class CreatePaymentIntent(APIView):
                 if not data.get(field):
                     raise ValidationError(f'{field.capitalize()} is required')
 
+
             product = Products.objects.get(id=data.get('product_id'))
             price = int(product.price) * int(data.get('quantity')) * 100
 
             stripe.api_key = settings.STRIPE_SECRET_KEY
             return_url = 'http://127.0.0.1:2000/confirmation'
+
+            customer_id = data.get('customer_id')
+            customer = stripe.Customer.retrieve(customer_id)
+
+            card_id = data.get('card_id')
+            payment_method = stripe.PaymentMethod.retrieve(card_id)
+
+            # Attach payment method to customer
+            payment_method.attach(customer=customer_id)
+            # payment_method = stripe.PaymentMethod.retrieve(card_id)
+            # if payment_method.customer != customer_id:
+            #     raise ValidationError('The payment method you provided has already been attached to a different customer.')
+
             
 
             # Create a PaymentIntent
@@ -191,8 +206,6 @@ class ConfirmationView(APIView):
     def get(self, request):
         return HttpResponse("Payment confirmed successfully")
     
-    
-        
 
 # class Manage_Cards(APIView):
 #     def post(self, request):
@@ -261,8 +274,8 @@ class CreateCard(APIView):
                     return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
 
             cvc = str(data.get('cvc'))  
-            if len(cvc) != 4:
-                return Response({'error': 'CVC must be 4 characters long'}, status=status.HTTP_400_BAD_REQUEST)
+            if len(cvc) != 3:
+                return Response({'error': 'CVC must be 3 characters long'}, status=status.HTTP_400_BAD_REQUEST)
             
             exp_year = str(data.get('exp_year'))
             if len(exp_year) != 4 or not exp_year.isdigit():
