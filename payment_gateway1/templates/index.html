@@ -16,7 +16,7 @@
         
         document.getElementById('checkout-button').addEventListener('click', function() {
             stripe.redirectToCheckout({
-                sessionId: 'cs_test_a1ESouWXUNn0IVC2vtxkfJnws33oJdf4RG0wliA0hAJM3fDGvOSJxZIjGE'
+                sessionId: 'cs_test_a1epjX3kXZYJJfS1QA6DPN9ZgXzcFGigNEbdxMCaIMIp5MZP6VcNLNbtnE'
             }).then(function(result) {
                 if (result.error) {
                     alert(result.error.message);
@@ -26,7 +26,7 @@
 
         document.getElementById('checkout-button2').addEventListener('click', function() {
             stripe.redirectToCheckout({
-                sessionId: 'cs_test_a1pMtJRsTGOg3t17dGDsjOONvmDWZ63PCFL7lYBCwo3pnFRWTl4cAk0Cba'
+                sessionId: 'cs_test_a132nZNfQ3Ilk5XZ4Ev24okYCjURQUtd3aMS5d0hC9mUBTuUhZW2fjkSWf'
             }).then(function(result) {
                 if (result.error) {
                     alert(result.error.message);
