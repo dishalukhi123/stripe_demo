@@ -17,6 +17,6 @@ urlpatterns = [
     # Payment successfully URL
     path('confirmation/', ConfirmationView.as_view(), name='payment_confirmation'),
     # products
-    path('products/', AddProduct.as_view(), name='add-product'),
-    path('products/<int:product_id>/', AddProduct.as_view(), name='product-detail'),
+    path('products/', ManageProduct.as_view(), name='add-product'),
+    path('products/<int:product_id>/', ManageProduct.as_view(), name='product-detail'),
 ]

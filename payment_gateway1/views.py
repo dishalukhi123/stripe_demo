@@ -109,7 +109,7 @@ class CreatePaymentIntent(APIView):
             price = int(product.price) * int(data.get('quantity')) * 100
 
             stripe.api_key = settings.STRIPE_SECRET_KEY
-            return_url = 'http://127.0.0.1:2000/confirmation'
+            return_url = 'http://127.0.0.1:3000/confirmation/'
 
             customer_id = data.get('customer_id')
             customer = stripe.Customer.retrieve(customer_id)
@@ -129,28 +129,8 @@ class CreatePaymentIntent(APIView):
                 return_url=return_url
             )
             print('=-=-=-=-',payment_intent.id)
-            # stripe.PaymentIntent.confirm(
-            #     payment_intent.id,
-            #     payment_method=data.get('card_id')
-                 
-            # )
            
-
             print('Payment Intent:', payment_intent)
-
-            # if payment_intent.payment_method:
-            #     payment_method = stripe.PaymentMethod.retrieve(payment_intent.payment_method)
-            #     card_details = {
-            #         'last4': payment_method.card.last4,
-            #         'exp_month': payment_method.card.exp_month,
-            #         'exp_year': payment_method.card.exp_year,
-            #         'brand': payment_method.card.brand,
-            #         'country': payment_method.card.country,
-            #     }
-            # else:
-            #     card_details = None
-                
-
 
             return Response({'status': status.HTTP_200_OK, 'success': True ,'client_secret': payment_intent }, status=status.HTTP_201_CREATED)
         
@@ -174,7 +154,7 @@ class ConfirmPaymentIntent(APIView):
             payment_intent = stripe.PaymentIntent.confirm(
                 data.get('payment_intent_id'),
                 payment_method=data.get('card_id'),
-                return_url='http://127.0.0.1:2000/confirmation' 
+                return_url='http://127.0.0.1:3000/confirmation/' 
             )
 
             return Response({'message': 'Payment Intent confirmed successfully','payment_intent' : payment_intent}, status=status.HTTP_200_OK)
@@ -190,7 +170,6 @@ class ConfirmationView(APIView):
 
 # Card Related View 
 class ManageCard(APIView):
-    # renderer_classes = [ErrorRenderer]
     def get(self, request, card_id=None): 
         print('=-=-=-==-=-==', card_id)
         if card_id is not None:
@@ -198,7 +177,7 @@ class ManageCard(APIView):
                 card = Cards.objects.get(id=card_id)
                 serializer = CardSerializer(card)
                 return Response({'status': status.HTTP_200_OK, 'success': True, 'data': serializer.data})
-            except Products.DoesNotExist:
+            except Cards.DoesNotExist:
                 return Response({'error': 'Card not found'}, status=status.HTTP_404_NOT_FOUND)
         else:
             card = Cards.objects.all()
@@ -221,26 +200,26 @@ class ManageCard(APIView):
             # CVC   
             cvc = str(data.get('cvc'))  
             if len(cvc) != 3:
-                errors.append({'error': 'CVC must be 3 characters long'})
+                errors.append({'cvc': 'CVC must be 3 characters long'})
 
             # Exp Year
             exp_year = str(data.get('exp_year'))
             if not exp_year.isdigit() or len(exp_year) != 4:
-                errors.append({'error': 'exp_year must be a 4-digit number'})
+                errors.append({'exp_year': 'exp_year must be a 4-digit number'})
             else:
                 current_year = datetime.now().year
                 if int(exp_year) < current_year:
-                    errors.append({'error': 'Expiration year must be in the future'})
+                    errors.append({'exp_year': 'Expiration year must be in the future'})
 
             # Exp Month
             exp_month = str(data.get('exp_month'))
             if not exp_month.isdigit() or int(exp_month) < 1 or int(exp_month) > 12:
-                errors.append({'error': 'exp_month must be a number between 1 and 12'})
+                errors.append({'exp_month': 'exp_month must be a number between 1 and 12'})
 
             # Stripe Token
             stripe_token = data.get('card_number')
             if not stripe_token or not isinstance(stripe_token, str):
-                errors.append({'error': 'Invalid or missing stripe token'})
+                errors.append({'card_number': 'Invalid or missing stripe token'})
 
             # Card Name
             card_name = data.get('card_name')
@@ -253,12 +232,12 @@ class ManageCard(APIView):
             try:
                 customer = Customers.objects.get(stripe_customer_id=customer_id)
             except Customers.DoesNotExist:
-                errors.append({'error': 'Customer does not exist.'})
+                errors.append({'customer': 'Customer does not exist.'})
 
             # Card limit
             existing_cards_count = Cards.objects.filter(customer=customer).count()
             if existing_cards_count >= 2:
-                errors.append({'error': 'Card limit reached for this customer.'})
+                errors.append({'customer': 'Card limit reached for this customer.'})
             
             if errors:
                 return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False , 'error': errors} ,status=status.HTTP_400_BAD_REQUEST)
@@ -327,9 +306,13 @@ class ManageCard(APIView):
                 return Response({'status': status.HTTP_200_OK, 'success': True, 'message': 'Card details updated successfully'})
             else:
                 exp_year_errors = serializer.errors.get('exp_year')
+                exp_month_errors = serializer.errors.get('exp_month')
                 if exp_year_errors and "Ensure this value is less than or equal to 65535." in exp_year_errors:
                     error_message = "Expiration year must be a valid 4-digit number"
                     return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'errors': {'exp_year': [error_message]}}, status=status.HTTP_400_BAD_REQUEST)
+                elif exp_month_errors and "Ensure this value is less than or equal to 65535." in exp_month_errors:
+                    error_message = "Expiration month must be a number between 1 and 12"
+                    return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'errors': {'exp_month': [error_message]}}, status=status.HTTP_400_BAD_REQUEST)
                 return Response({'status': status.HTTP_400_BAD_REQUEST, 'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         except Cards.DoesNotExist:
             return Response({'status': status.HTTP_404_NOT_FOUND, 'success': False, 'error': 'Card not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -345,7 +328,7 @@ class ManageCard(APIView):
         
 
 # Product Related View 
-class AddProduct(APIView):
+class ManageProduct(APIView):
     def get(self, request, product_id=None):
         if product_id is not None:
             try:
@@ -364,12 +347,12 @@ class AddProduct(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({'status': status.HTTP_201_CREATED, 'success': True, 'data': serializer.data})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
+        return Response({'status': status.HTTP_404_NOT_FOUND, 'success': False ,  'data': serializer.errors} , status=status.HTTP_400_BAD_REQUEST)  
     
     def patch(self, request, product_id):
         try:
             product = Products.objects.get(id=product_id)
-            serializer = ProductsSerializer(Products, data=request.data, partial=True)
+            serializer = ProductsSerializer(product, data=request.data, partial=True)
             if serializer.is_valid():
                 if serializer.validated_data:  
                     serializer.save()
@@ -382,7 +365,7 @@ class AddProduct(APIView):
         
     def delete(self, request, product_id, format=None):
         try:
-            product = Cards.objects.get(id=product_id)
+            product = Products.objects.get(id=product_id)
             product.delete()
             return Response({'status': status.HTTP_204_NO_CONTENT, 'success': True ,'message' : 'Delete product successfully'}, status=status.HTTP_204_NO_CONTENT)
         except Http404:
